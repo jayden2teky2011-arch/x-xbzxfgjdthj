@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Prank Sign Up Hub</title>
+  <style>
+    body {font-family: Arial; text-align: center; margin-top: 50px; background: #f0f0f0;}
+    input {margin: 10px; padding: 5px; width: 250px; border: 2px solid #333;}
+    button {padding: 12px 20px; background: #ff4444; color: white; border: none; cursor: pointer;}
+    button:hover {background: #cc0000;}
+    .consent {color: #ff4444; margin-top: 10px; font-weight: bold;}
+    .result {margin-top: 20px; color: #333;}
+  </style>
+</head>
+<body>
+  <h1>Welcome to the Prank Sign Up!</h1>
+  <p class="consent">We collect your IP and location (Wi-Fi proxy) for fun. Prank calls to 447459454280 are welcome! <input type="checkbox" id="consent"> I consent. <a href="#" onclick="showPrivacy()">Details</a></p>
+  <form id="myForm">
+    <input type="text" id="name" placeholder="Full Name" required><br>
+    <input type="tel" id="phone" placeholder="Phone Number" required><br>
+    <input type="text" id="address" placeholder="Full Address" required><br>
+    <button type="submit" id="submitBtn" disabled>Continue</button>
+  </form>
+  <p id="error" style="display:none; color:red;">Error: Something went wrong!</p>
+  <p id="result" class="result" style="display:none;"></p>
+  <p id="privacy" style="display:none;">Your IP and location (city/region) are used for a prank. My number (447459454280) is for laughs—keep it chill! Close to proceed.</p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3srAsjRYfgoeIfGWY9WfIfWI-LR31Nkg",
+      authDomain: "start-a-football-club.firebaseapp.com",
+      projectId: "start-a-football-club",
+      storageBucket: "start-a-football-club.firebasestorage.app",
+      messagingSenderId: "110896698874",
+      appId: "1:110896698874:web:dea4e64deb12b573f18043",
+      measurementId: "G-KW4M8RRFHC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Consent and button enable
+    document.getElementById("consent").addEventListener("change", function() {
+      document.getElementById("submitBtn").disabled = !this.checked;
+    });
+
+    // Privacy toggle
+    function showPrivacy() {
+      const privacy = document.getElementById("privacy");
+      privacy.style.display = privacy.style.display === "none" ? "block" : "none";
+    }
+
+    // Handle form submission
+    async function submitForm() {
+      let name = document.getElementById("name").value;
+      let phone = document.getElementById("phone").value;
+      let address = document.getElementById("address").value;
+      let ip = "Not Collected";
+      let location = "Not Available";
+
+      // Fetch IP with consent
+      if (document.getElementById("consent").checked) {
+        try {
+          const ipResponse = await fetch("https://api.ipify.org?format=json");
+          const ipData = await ipResponse.json();
+          ip = ipData.ip;
+        } catch (e) {
+          console.error("IP fetch failed:", e);
+          ip = "Fetch Failed";
+        }
+
+        // Fetch geolocation as Wi-Fi proxy
+        try {
+          const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
+          const geoData = await geoResponse.json();
+          location = `${geoData.city}, ${geoData.region}` || "Unknown Location";
+        } catch (e) {
+          console.error("Geolocation fetch failed:", e);
+        }
+      }
+
+      // Show result to them
+      document.getElementById("result").textContent = `Your IP is ${ip}! Location hint: ${location}! Call 447459454280 to laugh!`;
+      document.getElementById("result").style.display = "block";
+
+      try {
+        await addDoc(collection(db, "userData"), { name, phone, address, ip, location, ownerPhone: "447459454280" });
+        document.getElementById("error").style.display = "none"; // Hide error on success
+      } catch (e) {
+        console.error("Error: ", e);
+        document.getElementById("error").style.display = "block";
+      }
+
+      // Reset form and consent
+      document.getElementById("myForm").reset();
+      document.getElementById("consent").checked = false;
+      document.getElementById("submitBtn").disabled = true;
+    }
+
+    // Add event listener
+    document.getElementById("myForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      submitForm();
+    });
+  </script>
+</body>
+</html>
